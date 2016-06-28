@@ -44,8 +44,8 @@ def format_time(num):
 
 
 class Database(object):
-    update_sql = "UPDATE `tblGlacier` SET `archiveid`=%s, `archivevault`=%s, `archivedate`=%s WHERE `name`=%s"
-    select_sql = "SELECT `name` from `tblGlacier`"
+    update_sql = "UPDATE `tblDocs` SET `archiveid`=%s, `archivevault`=%s, `archivedate`=%s WHERE `name`=%s"
+    select_sql = "SELECT `name` from `tblDocs`"
 
     def __init__(self, host, port, username, password, name):
         self.host = host
