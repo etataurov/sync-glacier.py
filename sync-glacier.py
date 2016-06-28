@@ -43,6 +43,45 @@ def format_time(num):
     return ', '.join(times)
 
 
+class Database(object):
+    update_sql = "UPDATE `tblGlacier` SET `archiveid`=%s, `archivevault`=%s, `archivedate`=%s WHERE `name`=%s"
+
+    def __init__(self, host, port, username, password, name):
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.name = name
+        self.connection = None
+        self.connect()
+
+    def connect(self):
+        self.connection = pymysql.connect(
+            host=self.host,
+            port=self.port,
+            user=self.username,
+            password=self.password,
+            db=self.name
+        )
+
+    def close(self):
+        self.connection.close()
+        self.connection = None
+
+    def update(self, file, id, vault):
+        print file + ": updating database info... ",
+        try:
+            with self.connection.cursor() as cursor:
+                cursor.execute(self.update_sql,
+                               (id, vault.arn, int(time.time()), file))
+        except pymysql.MySQLError as exc:
+            print "error occured: " + str(exc)
+            self.connection.rollback()
+        else:
+            self.connection.commit()
+            print "done. "
+
+
 class Config(object):
     def __init__(self, config_path):
         self.config_path = config_path
@@ -156,12 +195,12 @@ def main():
         config.write()
         print "Imported a new inventory from Amazon."
 
-    db_connection = pymysql.connect(
+    database = Database(
         host=db_host,
         port=db_port,
-        user=db_username,
+        username=db_username,
         password=db_password,
-        db=db_name
+        name=db_name
     )
     print "Connected to database."
     # Let's upload!
@@ -213,22 +252,13 @@ def main():
                     else:
                         print "done."
 
-                    print file + ": updating database info... ",
-                    try:
-                        with db_connection.cursor() as cursor:
-                            cursor.execute(update_sql, (id, vault.arn, int(time.time()), file))
-                    except pymysql.MySQLError as exc:
-                        print "error occured: " + str(exc)
-                        db_connection.rollback()
-                    else:
-                        db_connection.commit()
-                        print "done. "
+                    database.update(file, id, vault)
 
                 except UploadArchiveError:
                     print "FAILED TO UPLOAD."
 
     finally:
-        db_connection.close()
+        database.close()
         elapsed = time.time() - time_begin
         print "\n" + str(i) + " files successfully uploaded."
         print "Transferred " + format_bytes(transferred) + " in " + format_time(elapsed) + " at rate of " + format_bytes(transferred / elapsed) + "/s."
