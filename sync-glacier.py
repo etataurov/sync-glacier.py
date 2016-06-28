@@ -17,8 +17,6 @@ db_username = ""
 db_password = ""
 db_name = ""
 
-update_sql = "UPDATE `tblDocs` SET `archiveid`=%s, `archivevault`=%s, `archivedate`=%s WHERE `name`=%s"
-
 
 def terminate(code):
     raw_input("\nPress enter to continue...")
