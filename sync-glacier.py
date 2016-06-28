@@ -45,6 +45,7 @@ def format_time(num):
 
 class Database(object):
     update_sql = "UPDATE `tblGlacier` SET `archiveid`=%s, `archivevault`=%s, `archivedate`=%s WHERE `name`=%s"
+    select_sql = "SELECT `name` from `tblGlacier`"
 
     def __init__(self, host, port, username, password, name):
         self.host = host
@@ -80,6 +81,14 @@ class Database(object):
         else:
             self.connection.commit()
             print "done. "
+
+    def files(self):
+        with self.connection.cursor() as cursor:
+            cursor.execute(self.select_sql)
+            for row in cursor:
+                filename = row[0]
+                if filename:
+                    yield filename
 
 
 class Config(object):
@@ -140,11 +149,8 @@ def read_config():
         print "Config file not found. Pass in a file with the vault name and the directory to sync on separate lines."
         terminate(1)
 
-    # Read the config file
     config_path = sys.argv[1]
     return Config(config_path)
-
-    # return vault_info, region, vault_name, ls_present, inventory_job, dirs
 
 
 def main():
@@ -211,8 +217,7 @@ def main():
         time_begin = time.time()
         for dir in config.dirs:
             print "Syncing " + dir
-            files = os.listdir(dir)
-            for file in files:
+            for file in database.files():
                 path = dir + os.sep + file
 
                 # If it's a directory, then ignore it
