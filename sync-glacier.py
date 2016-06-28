@@ -220,6 +220,10 @@ def main():
             for file in database.files():
                 path = dir + os.sep + file
 
+                if not os.path.exists(path):
+                    print >> sys.stderr, "'%s' does not exist" % path
+                    continue
+
                 # If it's a directory, then ignore it
                 if not os.path.isfile(path):
                     continue
